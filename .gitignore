@@ -1,2 +1,4 @@
 .idea
 com.*
+config.json
+plex-purge.log
