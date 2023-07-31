@@ -1,4 +1,6 @@
 """
+UNFINISHED AND UNUSED: converted to tautulli.py for better view count data
+
 Walk a Plex library and purge it of badly rated/unwatched content
 Inspiration from https://gist.github.com/JonnyWong16/d0972e1913941790670708dd99eecf65
 """
