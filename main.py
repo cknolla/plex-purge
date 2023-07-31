@@ -10,15 +10,14 @@ import sqlite3
 from datetime import datetime, timedelta
 
 from plexapi.server import PlexServer
+
 # from rotten_tomatoes_client import RottenTomatoesClient
 
 logging.basicConfig(
     format="%(asctime)s:%(levelname)s:%(message)s",
     level=logging.INFO,
     handlers=[
-        logging.FileHandler(
-            os.path.join("plex-purge.log"), mode="w"
-        ),
+        logging.FileHandler(os.path.join("plex-purge.log"), mode="w"),
         logging.StreamHandler(),
     ],
 )
@@ -53,7 +52,9 @@ def main():
 
     for plex_movie in movie_library.all():
         if plex_movie.title == "Zootopia":
-            logger.info(f"Movie: {plex_movie.title}, viewCount: {plex_movie.viewCount}, lastViewedAt: {plex_movie.lastViewedAt}")
+            logger.info(
+                f"Movie: {plex_movie.title}, viewCount: {plex_movie.viewCount}, lastViewedAt: {plex_movie.lastViewedAt}"
+            )
             if now - plex_movie.addedAt > timedelta(days=182):
                 logger.info(f"added over 6 months ago {plex_movie.addedAt}")
             if plex_movie.audienceRating and plex_movie.audienceRating < 7:
@@ -62,8 +63,5 @@ def main():
                 logger.info(f"rating less than 7 {plex_movie.rating}")
 
 
-if __name__ == '__main__':
-   main()
-
-
-
+if __name__ == "__main__":
+    main()
