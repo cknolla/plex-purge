@@ -1,0 +1,15 @@
+{
+  "library_name": "Movies",
+  "tautulli_url": "https://tautulli-web.domain/api/v2",
+  "tautulli_api_key": "",
+  "min_age_days": 182,
+  "recently_watched_days": 90,
+  "min_play_count": 2,
+  "rating_min": 7.0,
+  "audience_rating_min": 7.0,
+  "refresh_libraries": true,
+  "whitelist": [
+    "2 Fast 2 Furious"
+  ],
+  "generate_docs": false
+}

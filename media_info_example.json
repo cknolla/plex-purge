@@ -1,0 +1,27 @@
+[
+   {
+      "section_id":1,
+      "section_type":"movie",
+      "added_at":"1471813628",
+      "media_type":"movie",
+      "rating_key":"9660",
+      "parent_rating_key":"",
+      "grandparent_rating_key":"",
+      "title":"Zootopia",
+      "sort_title":"Zootopia",
+      "year":"2016",
+      "media_index":"",
+      "parent_media_index":"",
+      "thumb":"/library/metadata/9660/thumb/1689479203",
+      "container":"mkv",
+      "bitrate":"7692",
+      "video_codec":"h264",
+      "video_resolution":"720",
+      "video_framerate":"24p",
+      "audio_codec":"dca",
+      "audio_channels":"6",
+      "file_size":"6273349739",
+      "last_played":1671398122,
+      "play_count":16
+   }
+]

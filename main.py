@@ -5,7 +5,6 @@ Inspiration from https://gist.github.com/JonnyWong16/d0972e1913941790670708dd99e
 import logging
 import os
 import json
-import re
 import sqlite3
 from datetime import datetime, timedelta
 
