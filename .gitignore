@@ -1,4 +1,7 @@
+__pycache__
 .idea
 com.*
 config.json
-plex-purge.log
+logs/*
+
+!.gitkeep

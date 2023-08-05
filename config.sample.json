@@ -2,14 +2,21 @@
   "library_name": "Movies",
   "tautulli_url": "https://tautulli-web.domain/api/v2",
   "tautulli_api_key": "",
+  "radarr_url": "https://radarr-web.domain/api/v3",
+  "radarr_api_key": "",
+  "ombi_url": "https://ombi-web.domain/api/v1",
+  "ombi_api_key": "",
   "min_age_days": 182,
   "recently_watched_days": 90,
   "min_play_count": 2,
   "rating_min": 7.0,
   "audience_rating_min": 7.0,
   "refresh_libraries": true,
+  "generate_docs": false,
+  "trash_dirs": [
+    "/mnt/media/.Trash-1000"
+  ],
   "whitelist": [
     "2 Fast 2 Furious"
-  ],
-  "generate_docs": false
+  ]
 }
