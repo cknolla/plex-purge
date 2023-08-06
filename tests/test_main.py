@@ -1,6 +1,6 @@
 import os
 
-from tautulli import empty_trash
+from main import empty_trash
 
 
 def test_empty_trash():

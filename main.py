@@ -51,9 +51,6 @@ logger = logging.getLogger(os.path.basename(__file__).removesuffix(".py"))
 
 
 CONFIG = {}
-TAUTULLI_URL = ""
-RADARR_URL = ""
-OMBI_URL = ""
 NOW = datetime.now()
 MAX_RATING = 10.0
 
@@ -63,8 +60,8 @@ class Media:
         self.added_at: datetime = NOW
         self.title: str = ""
         self.sort_title: str = ""
-        self.tmdb_id: int = None
-        self.radarr_id: int = None
+        self.tmdb_id: int = 0
+        self.radarr_id: int = 0
         self.audience_rating: float = MAX_RATING
         self.rating: float = MAX_RATING
         self.file_path: str = ""
@@ -101,18 +98,18 @@ class Media:
         )
 
 
-def get_libraries(session: Session) -> dict[str, str]:
+def get_libraries(session: Session, tautulli_url: str) -> dict[str, str]:
     """Get dict mapping of {'library_name': 'section_id'}."""
     if CONFIG["refresh_libraries"]:
         refresh_response = session.get(
-            TAUTULLI_URL,
+            tautulli_url,
             params={
                 "cmd": "refresh_libraries_list",
             },
         )
         assert refresh_response.json()["response"]["result"] == "success"
     get_libraries_response = session.get(
-        TAUTULLI_URL,
+        tautulli_url,
         params={
             "cmd": "get_libraries",
         },
@@ -126,6 +123,7 @@ def get_libraries(session: Session) -> dict[str, str]:
 
 def get_media_info(
     session: Session,
+    tautulli_url: str,
     section_id: str,
 ) -> Generator[dict[str, Any], None, None]:
     """Get paged library media info."""
@@ -134,7 +132,7 @@ def get_media_info(
     while True:
         logging.debug("Fetching media info")
         media_info = session.get(
-            TAUTULLI_URL,
+            tautulli_url,
             params={
                 "cmd": "get_library_media_info",
                 "section_id": section_id,
@@ -152,11 +150,13 @@ def get_media_info(
         offset += limit
 
 
-def get_metadata(session: Session, rating_key: str) -> dict[str, Any]:
+def get_metadata(
+    session: Session, tautulli_url: str, rating_key: str
+) -> dict[str, Any]:
     """Get a single item's metadata."""
     logging.debug("Fetching metadata")
     get_metadata_response = session.get(
-        TAUTULLI_URL,
+        tautulli_url,
         params={
             "cmd": "get_metadata",
             "rating_key": rating_key,
@@ -166,12 +166,12 @@ def get_metadata(session: Session, rating_key: str) -> dict[str, Any]:
     return metadata
 
 
-def get_docs(session: Session) -> None:
+def get_docs(session: Session, tautulli_url: str) -> None:
     """View Tautulli docs as dict."""
     logging.debug("Retrieving docs")
     docs_filepath = "tautulli_docs.json"
     docs_response = session.get(
-        TAUTULLI_URL,
+        tautulli_url,
         params={
             "cmd": "docs",
         },
@@ -185,13 +185,13 @@ def get_docs(session: Session) -> None:
         )
 
 
-def remove_from_ombi(session: Session, blacklist: list[Media]):
+def remove_from_ombi(session: Session, ombi_url: str, blacklist: list[Media]):
     """Remove requests from ombi to not leave dangling pointers."""
     in_ombi: list[str] = []
     errors_in_ombi: list[str] = []
     not_in_ombi: list[str] = []
     requests: list[dict] = session.get(
-        f"{OMBI_URL}/Request/movie",
+        f"{ombi_url}/Request/movie",
     ).json()
     keyed_requests = {request["theMovieDbId"]: request["id"] for request in requests}
     for media in blacklist:
@@ -199,7 +199,7 @@ def remove_from_ombi(session: Session, blacklist: list[Media]):
             not_in_ombi.append(media.title)
             continue
         delete_response = session.delete(
-            f"{OMBI_URL}/Request/movie/{keyed_requests[media.tmdb_id]}"
+            f"{ombi_url}/Request/movie/{keyed_requests[media.tmdb_id]}"
         )
         if delete_response.status_code != HTTPStatus.OK:
             errors_in_ombi.append(media.title)
@@ -215,13 +215,15 @@ def remove_from_ombi(session: Session, blacklist: list[Media]):
         logger.warning(f"The following were not found in Ombi: {not_in_ombi}")
 
 
-def remove_from_radarr(session: Session, blacklist: list[Media]) -> list[Media]:
+def remove_from_radarr(
+    session: Session, radarr_url: str, blacklist: list[Media]
+) -> list[Media]:
     """Unmonitor movies in Radarr."""
     in_radarr: list[Media] = []
     not_in_radarr: list[Media] = []
     for media in blacklist:
         movie_details: dict = session.get(
-            RADARR_URL + "/movie",
+            f"{radarr_url}/movie",
             params={
                 "tmdbid": media.tmdb_id,
             },
@@ -242,7 +244,7 @@ def remove_from_radarr(session: Session, blacklist: list[Media]) -> list[Media]:
             f" {[media.title for media in in_radarr]}"
         )
         delete_response = session.delete(
-            f"{RADARR_URL}/movie/editor",
+            f"{radarr_url}/movie/editor",
             json={
                 "movieIds": [media.radarr_id for media in blacklist if media.radarr_id],
                 "deleteFiles": True,
@@ -270,9 +272,6 @@ def empty_trash(trash_dirs: list[str]):
 
 
 def main() -> None:
-    global TAUTULLI_URL
-    global RADARR_URL
-    global OMBI_URL
     global CONFIG
     start_time = time.time()
     with open(os.path.join("config.json")) as config_file:
@@ -282,17 +281,17 @@ def main() -> None:
         if (
             input(
                 f"trash_dirs are currently: "
-                f"{[dir for dir in CONFIG['trash_dirs']]}."
+                f"{[directory for directory in CONFIG['trash_dirs']]}."
                 f"\nThese will be completely deleted. Ok? (y/n)"
             ).lower()
             != "y"
         ):
             return
-    TAUTULLI_URL = CONFIG["tautulli_url"]
+    tautulli_url = CONFIG["tautulli_url"]
     tautulli_api_key = CONFIG["tautulli_api_key"]
-    RADARR_URL = CONFIG["radarr_url"]
+    radarr_url = CONFIG["radarr_url"]
     radarr_api_key = CONFIG["radarr_api_key"]
-    OMBI_URL = CONFIG["ombi_url"]
+    ombi_url = CONFIG["ombi_url"]
     ombi_api_key = CONFIG["ombi_api_key"]
     tautulli_session = Session()
     tautulli_session.params = {
@@ -310,12 +309,19 @@ def main() -> None:
     total_media_count = 0
     total_file_size = 0
     if CONFIG["generate_docs"]:
-        get_docs(session=tautulli_session)
+        get_docs(
+            session=tautulli_session,
+            tautulli_url=tautulli_url,
+        )
         # bail early just to view docs
         return
-    libraries = get_libraries(session=tautulli_session)
+    libraries = get_libraries(
+        session=tautulli_session,
+        tautulli_url=tautulli_url,
+    )
     for media_info in get_media_info(
         session=tautulli_session,
+        tautulli_url=tautulli_url,
         section_id=libraries[CONFIG["library_name"]],
     ):
         media = Media()
@@ -343,7 +349,9 @@ def main() -> None:
             logging.info("\tRecently watched, skipping")
             continue
         metadata = get_metadata(
-            session=tautulli_session, rating_key=media_info["rating_key"]
+            session=tautulli_session,
+            tautulli_url=tautulli_url,
+            rating_key=media_info["rating_key"],
         )
         if not metadata:
             logger.warning(
@@ -380,8 +388,16 @@ def main() -> None:
         f"Blacklist size: {len(blacklist)}, {(len(blacklist)/total_media_count * 100):.2f}%"
     )
     logging.info(f"Total file size to clear: {total_file_size/1_000_000_000:.2f}GB")
-    remove_from_ombi(session=ombi_session, blacklist=blacklist)
-    not_in_radarr = remove_from_radarr(session=radarr_session, blacklist=blacklist)
+    remove_from_ombi(
+        session=ombi_session,
+        ombi_url=ombi_url,
+        blacklist=blacklist,
+    )
+    not_in_radarr = remove_from_radarr(
+        session=radarr_session,
+        radarr_url=radarr_url,
+        blacklist=blacklist,
+    )
     if not_in_radarr:
         direct_delete(medias=not_in_radarr)
     empty_trash(CONFIG["trash_dirs"])
