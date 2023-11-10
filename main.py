@@ -345,9 +345,9 @@ def main() -> None:
             if media_info["last_played"]
             else None
         )
-        if media.recently_watched:
-            logging.info("\tRecently watched, skipping")
-            continue
+        # if media.recently_watched:
+        #     logging.info("\tRecently watched, skipping")
+        #     continue
         metadata = get_metadata(
             session=tautulli_session,
             tautulli_url=tautulli_url,
